@@ -68,26 +68,66 @@ async def fetch_exchange_rates(urls, max_concurrent_requests=10):
         return results
 
 
-def result_parser(results: list) -> list:
+def result_parser(result: str) -> list:
     """
+    Parsing one result
     Leaves only EURO and USD sale and purchase rates,
     sorts them by date and prints them
     """
+    # Unparsed result:
+    # {
+    # "date": "05.08.2024",
+    # "bank": "PB",
+    # "baseCurrency": 980,
+    # "baseCurrencyLit": "UAH",
+    # "exchangeRate": [
+    #   {
+    #     "baseCurrency": "UAH",
+    #     "currency": "USD",
+    #     "saleRateNB": 41.2250000,
+    #     "purchaseRateNB": 41.2250000,
+    #     "saleRate": 41.5000000,
+    #     "purchaseRate": 40.9000000,
+    #   },
+    # {
+    #     "baseCurrency": "UAH",
+    #     "currency": "EUR",
+    #     "saleRateNB": 44.6467000,
+    #     "purchaseRateNB": 44.6467000,
+    #     "saleRate": 45.2000000,
+    #     "purchaseRate": 44.2000000,
+    #         },
+    #     ],
+    # }
+    # Parsed result:
+    # {
+    #     "03.11.2022": {
+    #         "EUR": {"sale": 45.2, "purchase": 44.2},
+    #         "USD": {"sale": 41.5, "purchase": 40.9},
+    #     }
+    # }
     parsed_results = {}
-    for result in results:  # each result is a dictionary
-        result = json.loads(result)
+    for each_result in result:
+        result = json.loads(each_result)
         date = result["date"]
-        for currency in result["exchangeRate"]:
-            if currency["currency"] == "EUR" or currency["currency"] == "USD":
-                parsed_results[date] = {
-                    "currency": currency["currency"],
-                    "sale": currency["saleRate"],
-                    "purchase": currency["purchaseRate"],
+        exchange_rate = result["exchangeRate"]
+        parsed_results[date] = {}
+        for each_exchange_rate in exchange_rate:
+            currency = each_exchange_rate["currency"]
+            if currency in ["EUR", "USD"]:
+                sale_rate = each_exchange_rate["saleRate"]
+                purchase_rate = each_exchange_rate["purchaseRate"]
+                parsed_results[date][currency] = {
+                    "sale": sale_rate,
+                    "purchase": purchase_rate,
                 }
-    print(parsed_results)
+    return parsed_results
 
+def print_results(parsed_results):
+    print(json.dumps(parsed_results, indent=4))
 
 if __name__ == "__main__":
     urls = url_creator(get_needed_days())
     results = asyncio.run(fetch_exchange_rates(urls))
-    result_parser(results)
+    parsed_results = result_parser(results)
+    print_results(parsed_results)
