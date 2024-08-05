@@ -57,6 +57,10 @@ async def fetch_exchange_rate(session, url, semaphore):
 
 
 async def fetch_exchange_rates(urls, max_concurrent_requests=10):
+    """
+    Fetching exchange rates from the API using asyncio semaphore
+    Also using tqdm to show the progress of fetching the data
+    """
     semaphore = asyncio.Semaphore(max_concurrent_requests)
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_exchange_rate(session, url, semaphore) for url in urls]
@@ -70,42 +74,10 @@ async def fetch_exchange_rates(urls, max_concurrent_requests=10):
 
 def result_parser(result: str) -> list:
     """
-    Parsing one result
+    Parsing all the results from the API
     Leaves only EURO and USD sale and purchase rates,
     sorts them by date and prints them
     """
-    # Unparsed result:
-    # {
-    # "date": "05.08.2024",
-    # "bank": "PB",
-    # "baseCurrency": 980,
-    # "baseCurrencyLit": "UAH",
-    # "exchangeRate": [
-    #   {
-    #     "baseCurrency": "UAH",
-    #     "currency": "USD",
-    #     "saleRateNB": 41.2250000,
-    #     "purchaseRateNB": 41.2250000,
-    #     "saleRate": 41.5000000,
-    #     "purchaseRate": 40.9000000,
-    #   },
-    # {
-    #     "baseCurrency": "UAH",
-    #     "currency": "EUR",
-    #     "saleRateNB": 44.6467000,
-    #     "purchaseRateNB": 44.6467000,
-    #     "saleRate": 45.2000000,
-    #     "purchaseRate": 44.2000000,
-    #         },
-    #     ],
-    # }
-    # Parsed result:
-    # {
-    #     "03.11.2022": {
-    #         "EUR": {"sale": 45.2, "purchase": 44.2},
-    #         "USD": {"sale": 41.5, "purchase": 40.9},
-    #     }
-    # }
     parsed_results = {}
     for each_result in result:
         result = json.loads(each_result)
